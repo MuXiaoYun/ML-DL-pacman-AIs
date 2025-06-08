@@ -6,6 +6,8 @@ from queue import Queue
 import config
 from pacmanlearn import State
 from mcts import MCTS
+from dqn import DQNNetwork
+import torch
 
 # 全局变量
 map_data = []
@@ -106,6 +108,11 @@ def ai_controling(current_turn):
 
 def main():
     global input_queue, ai, last_ai_move, moves_left
+
+    if config.ai_type == 'dqn':
+        dqn = DQNNetwork()           
+        dqn.load_state_dict(torch.load('models/dqn_model.pth'))
+
     load_map('map.txt')
     input_thread = threading.Thread(target=handle_input)
     input_thread.daemon = True
@@ -116,19 +123,31 @@ def main():
         if ai_controling(current_turn):
             ## ai here
             try:
-                mcts = MCTS(State(map_data))
-                mcts.run()
-                move = mcts.decide()
-                last_ai_move = move
-                if move_character(current_turn, move):
-                    break
-                current_turn = 'G' if current_turn == 'E' else 'G'
-                print_map(current_turn)
-                time.sleep(0.1)
+                if config.ai_type == 'mcts':
+                    mcts = MCTS(State(map_data))
+                    mcts.run()
+                    move = mcts.decide()
+                    last_ai_move = move
+                    if move_character(current_turn, move):
+                        break
+                    current_turn = 'G' if current_turn == 'E' else 'G'
+                    print_map(current_turn)
+                    time.sleep(0.1)
+                elif config.ai_type == 'dqn':
+                    move = dqn.decide(State(map_data))
+                    last_ai_move = move
+                    if move_character(current_turn, move):
+                        break
+                    current_turn = 'G' if current_turn == 'E' else 'E'
+                    print_map(current_turn)
+                    time.sleep(0.1)
+                else:
+                    raise NotImplementedError("AI type not implemented")
             except Exception as e:
                 print("----------------ERROR!----------------")
                 print(f"Exception: {e}")
-                mcts.print_self()
+                if config.ai_type == 'mcts':
+                    mcts.print_self()
                 raise    
             continue
         if not input_queue.empty():       
@@ -146,7 +165,8 @@ def main():
             time.sleep(0.1)
         if moves_left == 0:
             break
-    print(mcts)
+    if config.ai_type == 'mcts':
+        mcts.print_self()
 
 if __name__ == "__main__":
     main()

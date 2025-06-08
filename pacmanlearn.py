@@ -54,11 +54,18 @@ class State:
         self.movesleft -= 1
         newx, newy = State.update_position(self.pos[player], direction)
         if self.map[newx][newy] == ' ':
+            self.map[self.pos[player][0]][self.pos[player][1]] = ' '
             self.pos[player] = newx, newy
+            self.map[self.pos[player][0]][self.pos[player][1]] = player
         elif self.map[newx][newy] == '.':
+            self.map[self.pos[player][0]][self.pos[player][1]] = ' '
             self.pos[player] = newx, newy
+            self.map[self.pos[player][0]][self.pos[player][1]] = player
             self.points += 1
         elif self.map[newx][newy] == 'X':
+            pass
+        elif direction == 'E':
+            # stand still
             pass
         else:
             #meets another agent
@@ -67,3 +74,19 @@ class State:
             return False
         self.switch_player()
         return True
+
+    def state_score(self):
+        # TODO: 可以便宜修改这个函数
+        part1 = self.points # 主要奖励
+        part2 = self.movesleft # 鼓励智能体尽快完成任务
+        return part1 + config.state_movesleft_w * part2
+    
+    def get_map_xy(self):
+        return len(self.map), len(self.map[0])
+    
+    def dead_man_walking(self):
+        # 如果E和G紧邻，返回True
+        ex, ey = self.pos['E']
+        gx, gy = self.pos['G']
+        if abs(ex - gx) + abs(ey - gy) <= 1:
+            return True

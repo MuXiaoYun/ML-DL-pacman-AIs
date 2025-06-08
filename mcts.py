@@ -77,14 +77,14 @@ class MCTS:
 
     def rollout(state: State, left: int):# remember to copy state before rollout()
         if left == 0:
-            return state.points #rollout max times reached
+            return state.state_score() #rollout max times reached
         left -= 1
         valid_moves = state.valid_moves()
         move = random.choice(valid_moves)
         if(state.move(move)):
             return MCTS.rollout(state, left)
         else:
-            return state.points #got caught by guard
+            return state.state_score() #got caught by guard
         
     def bp(node: MCTS_node, value: float):
         node.T += value
@@ -102,7 +102,7 @@ class MCTS:
                 value = MCTS.rollout(cp_state, self.max_rollout)
                 MCTS.bp(leafnode.children[0], value)
             else:
-                MCTS.bp(leafnode, leafnode.state.points)
+                MCTS.bp(leafnode, leafnode.state.state_score())
             if time.time() - start_time > max_runtime:
                 break
 
